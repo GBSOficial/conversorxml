@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor Item.txt ↔ Item.xml</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .conversion-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .box {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            transition: all 0.3s;
+        }
+
+        .box:hover {
+            border-color: #764ba2;
+            background: #f0f0f0;
+        }
+
+        .box h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        .file-label:hover {
+            background: #764ba2;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            background: #218838;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .download-btn {
+            background: #007bff;
+        }
+
+        .download-btn:hover {
+            background: #0056b3;
+        }
+
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+            color: #004085;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .conversion-area {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Conversor Item.txt ↔ Item.xml</h1>
+        <p class="subtitle">Converta entre os formatos TXT e XML do servidor</p>
+
+        <div class="conversion-area">
+            <!-- TXT para XML -->
+            <div class="box">
+                <h2>📄 TXT → XML</h2>
+                <div class="file-input-wrapper">
+                    <input type="file" id="txtFile" class="file-input" accept=".txt">
+                    <label for="txtFile" class="file-label">📁 Selecionar arquivo Item.txt</label>
+                    <div class="file-name" id="txtFileName"></div>
+                </div>
+                <button class="btn" id="convertToXml" disabled>Converter para XML</button>
+                <button class="btn download-btn" id="downloadXml" disabled>⬇️ Baixar Item.xml</button>
+                <div id="txtStatus"></div>
+            </div>
+
+            <!-- XML para TXT -->
+            <div class="box">
+                <h2>📋 XML → TXT</h2>
+                <div class="file-input-wrapper">
+                    <input type="file" id="xmlFile" class="file-input" accept=".xml">
+                    <label for="xmlFile" class="file-label">📁 Selecionar arquivo Item.xml</label>
+                    <div class="file-name" id="xmlFileName"></div>
+                </div>
+                <button class="btn" id="convertToTxt" disabled>Converter para TXT</button>
+                <button class="btn download-btn" id="downloadTxt" disabled>⬇️ Baixar Item.txt</button>
+                <div id="xmlStatus"></div>
+            </div>
+        </div>
+
+        <div class="info">
+            <strong>ℹ️ Instruções:</strong><br>
+            • Selecione um arquivo TXT ou XML usando os botões acima<br>
+            • Clique em "Converter" para processar o arquivo<br>
+            • Use "Baixar" para salvar o arquivo convertido<br>
+            • Todas as conversões são feitas no navegador (privacidade garantida)
+        </div>
+    </div>
+
+    <script>
+        let txtContent = null;
+        let xmlContent = null;
+        let convertedXml = null;
+        let convertedTxt = null;
+
+        // TXT → XML
+        document.getElementById('txtFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('txtFileName').textContent = `Arquivo: ${file.name}`;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    txtContent = e.target.result;
+                    document.getElementById('convertToXml').disabled = false;
+                    document.getElementById('txtStatus').innerHTML = '';
+                };
+                reader.readAsText(file, 'UTF-8');
+            }
+        });
+
+        document.getElementById('convertToXml').addEventListener('click', function() {
+            if (!txtContent) return;
+            
+            try {
+                convertedXml = convertTxtToXml(txtContent);
+                document.getElementById('downloadXml').disabled = false;
+                document.getElementById('txtStatus').innerHTML = 
+                    '<div class="status success">✅ Conversão concluída com sucesso!</div>';
+            } catch (error) {
+                document.getElementById('txtStatus').innerHTML = 
+                    `<div class="status error">❌ Erro: ${error.message}</div>`;
+            }
+        });
+
+        document.getElementById('downloadXml').addEventListener('click', function() {
+            if (!convertedXml) return;
+            downloadFile(convertedXml, 'Item.xml', 'application/xml');
+        });
+
+        // XML → TXT
+        document.getElementById('xmlFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('xmlFileName').textContent = `Arquivo: ${file.name}`;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    xmlContent = e.target.result;
+                    document.getElementById('convertToTxt').disabled = false;
+                    document.getElementById('xmlStatus').innerHTML = '';
+                };
+                reader.readAsText(file, 'UTF-8');
+            }
+        });
+
+        document.getElementById('convertToTxt').addEventListener('click', function() {
+            if (!xmlContent) return;
+            
+            try {
+                convertedTxt = convertXmlToTxt(xmlContent);
+                document.getElementById('downloadTxt').disabled = false;
+                document.getElementById('xmlStatus').innerHTML = 
+                    '<div class="status success">✅ Conversão concluída com sucesso!</div>';
+            } catch (error) {
+                document.getElementById('xmlStatus').innerHTML = 
+                    `<div class="status error">❌ Erro: ${error.message}</div>`;
+            }
+        });
+
+        document.getElementById('downloadTxt').addEventListener('click', function() {
+            if (!convertedTxt) return;
+            downloadFile(convertedTxt, 'Item.txt', 'text/plain');
+        });
+
+        // Função para baixar arquivo
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Função para converter TXT para XML
+        function convertTxtToXml(txtContent) {
+            const lines = txtContent.split('\n').map(l => l.trim()).filter(l => l);
+            
+            // Remove cabeçalho se houver
+            if (lines[0] && lines[0].startsWith('//')) {
+                lines.shift();
+            }
+
+            let sectionIndex = "0";
+            if (lines[0] && /^-?\d+$/.test(lines[0])) {
+                sectionIndex = lines[0];
+                lines.shift();
+            }
+
+            let xml = '<?xml version="1.0"?>\n';
+            xml += '<ItemList>\n';
+            xml += `\t<Section Index="${sectionIndex}">\n`;
+
+            let currentSection = sectionIndex;
+
+            for (const line of lines) {
+                // Verifica se é mudança de seção
+                if (/^-?\d+$/.test(line)) {
+                    xml += `\t</Section>\n`;
+                    currentSection = line;
+                    xml += `\t<Section Index="${currentSection}">\n`;
+                    continue;
+                }
+
+                const parts = parseItemLine(line);
+                if (parts.length < 10) continue;
+
+                // Preenche valores faltantes
+                while (parts.length < 30) {
+                    parts.push("0");
+                }
+
+                const [
+                    index, slot, skill, width, height, haveSerial, haveOption, dropItem, name,
+                    level, damageMin, damageMax, attackSpeed, durability, magicDurability,
+                    magicDamageRate, reqLevel, reqStrength, reqDexterity, reqEnergy,
+                    reqVitality, reqLeadership, none, dw, dk, fe, mg, dl, su, rf
+                ] = parts;
+
+                const levelInt = parseInt(level) || 0;
+                const widthInt = parseInt(width) || 1;
+                const heightInt = parseInt(height) || 1;
+
+                const levelCH = determineLevelCH(levelInt);
+                const twohand = (widthInt >= 2 && heightInt >= 3) ? 1 : 0;
+                const expensive = (levelInt >= 80) ? "1" : "0";
+
+                xml += `<!--${currentSection}-->\t\t<Item `;
+                xml += `Index="${index}" `;
+                xml += `Name="${escapeXml(name)}" `;
+                xml += `Kind1="1" Kind2="1" Kind3="1" `;
+                xml += `Slot="${slot}" `;
+                xml += `Width="${width}" Height="${height}" `;
+                xml += `Drop="${dropItem}" `;
+                xml += `DropLevel="${level}" `;
+                xml += `SkillIndex="${skill}" `;
+                xml += `Value="0" iZen="0" `;
+                xml += `LevelCH="${levelCH}" `;
+                xml += `TwoHand="${twohand}" `;
+                xml += `DamageMin="${damageMin}" DamageMax="${damageMax}" `;
+                xml += `Defense="0" MagicDefense="0" SuccessfulBlocking="0" `;
+                xml += `WeaponSpeed="${attackSpeed}" WalkSpeed="0" `;
+                xml += `Durability="${durability}" MagicDurability="${magicDurability}" `;
+                xml += `Magicpower="${magicDamageRate}" `;
+                xml += `ReqLevel="${reqLevel}" `;
+                xml += `ReqStrength="${reqStrength}" `;
+                xml += `ReqDexterity="${reqDexterity}" `;
+                xml += `ReqEnergy="${reqEnergy}" `;
+                xml += `ReqVitality="${reqVitality}" `;
+                xml += `ReqCharisma="${reqLeadership}" `;
+                xml += `SetAttrib="${haveOption === "1" ? "1" : "0"}" `;
+                xml += `DarkWizard="${dw}" DarkKnight="${dk}" `;
+                xml += `FairyElf="${fe}" MagicGladiator="${mg}" `;
+                xml += `DarkLord="${dl}" Summoner="${su}" `;
+                xml += `RageFighter="${rf}" `;
+                xml += `GrowLancer="0" RuneWizard="0" Slayer="0" `;
+                xml += `GunCrusher="0" WhiteWizard="0" LemuriaMage="0" IllusionKnight="0" `;
+                xml += `Trade="1" StorePersonal="1" WhareHouse="1" SellNpc="1" `;
+                xml += `Expensive="${expensive}" Repair="1" Overlap="0" `;
+                xml += `PcFlag="0" MuunFlag="0" DropInventory="0" `;
+                xml += `ATTK="0" arg_683="0" arg_684="0" arg_686="0" arg_688="0" arg_690="0" `;
+                xml += `Path="Data\\Item\\" `;
+                xml += `Model="sword${(parseInt(index) || 0) % 100}`.padStart(2, '0') + `" />\n`;
+            }
+
+            xml += `\t</Section>\n`;
+            xml += `</ItemList>\n`;
+
+            return xml;
+        }
+
+        // Função para converter XML para TXT
+        function convertXmlToTxt(xmlContent) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+            
+            if (xmlDoc.documentElement.nodeName === 'parsererror') {
+                throw new Error('XML inválido: ' + xmlDoc.documentElement.textContent);
+            }
+
+            let txt = '//Type   Slot   Skill   Width   Height   HaveSerial   HaveOption   DropItem   Name                                 Level   DamageMin   DamageMax   AttackSpeed   Durability   MagicDurability   MagicDamageRate   ReqLevel   ReqStrength   ReqDexterity   ReqEnergy   ReqVitality   ReqLeadership   None   DW      DK      FE      MG      DL      SU      RF\n';
+
+            const sections = xmlDoc.querySelectorAll('Section');
+            
+            sections.forEach(section => {
+                const sectionIndex = section.getAttribute('Index') || '0';
+                txt += sectionIndex + '\n';
+
+                const items = section.querySelectorAll('Item');
+                items.forEach(item => {
+                    const index = item.getAttribute('Index') || '0';
+                    const slot = item.getAttribute('Slot') || '0';
+                    const skill = item.getAttribute('SkillIndex') || '0';
+                    const width = item.getAttribute('Width') || '1';
+                    const height = item.getAttribute('Height') || '1';
+                    const haveSerial = item.getAttribute('HaveSerial') || item.getAttribute('SetAttrib') || '1';
+                    const haveOption = item.getAttribute('SetAttrib') || item.getAttribute('HaveOption') || '1';
+                    const dropItem = item.getAttribute('Drop') || '1';
+                    const name = item.getAttribute('Name') || '';
+                    const level = item.getAttribute('DropLevel') || '0';
+                    const damageMin = item.getAttribute('DamageMin') || '0';
+                    const damageMax = item.getAttribute('DamageMax') || '0';
+                    const attackSpeed = item.getAttribute('WeaponSpeed') || '0';
+                    const durability = item.getAttribute('Durability') || '0';
+                    const magicDurability = item.getAttribute('MagicDurability') || '0';
+                    const magicDamageRate = item.getAttribute('Magicpower') || '0';
+                    const reqLevel = item.getAttribute('ReqLevel') || '0';
+                    const reqStrength = item.getAttribute('ReqStrength') || '0';
+                    const reqDexterity = item.getAttribute('ReqDexterity') || '0';
+                    const reqEnergy = item.getAttribute('ReqEnergy') || '0';
+                    const reqVitality = item.getAttribute('ReqVitality') || '0';
+                    const reqLeadership = item.getAttribute('ReqCharisma') || '0';
+                    const none = '0';
+                    const dw = item.getAttribute('DarkWizard') || '0';
+                    const dk = item.getAttribute('DarkKnight') || '0';
+                    const fe = item.getAttribute('FairyElf') || '0';
+                    const mg = item.getAttribute('MagicGladiator') || '0';
+                    const dl = item.getAttribute('DarkLord') || '0';
+                    const su = item.getAttribute('Summoner') || '0';
+                    const rf = item.getAttribute('RageFighter') || '0';
+
+                    // Formata a linha com espaçamento similar ao original
+                    // Espaçamento baseado no arquivo original
+                    const parts = [
+                        index.padStart(8),
+                        slot.padStart(7),
+                        skill.padStart(7),
+                        width.padStart(7),
+                        height.padStart(7),
+                        haveSerial.padStart(13),
+                        haveOption.padStart(13),
+                        dropItem.padStart(13),
+                        `"${name}"`.padEnd(35),
+                        level.padStart(7),
+                        damageMin.padStart(13),
+                        damageMax.padStart(13),
+                        attackSpeed.padStart(13),
+                        durability.padStart(13),
+                        magicDurability.padStart(18),
+                        magicDamageRate.padStart(18),
+                        reqLevel.padStart(11),
+                        reqStrength.padStart(13),
+                        reqDexterity.padStart(14),
+                        reqEnergy.padStart(14),
+                        reqVitality.padStart(14),
+                        reqLeadership.padStart(17),
+                        none.padStart(7),
+                        dw.padStart(7),
+                        dk.padStart(7),
+                        fe.padStart(7),
+                        mg.padStart(7),
+                        dl.padStart(7),
+                        su.padStart(7),
+                        rf
+                    ];
+                    
+                    txt += parts.join('  ') + '\n';
+                });
+            });
+
+            return txt;
+        }
+
+        // Função para fazer parse de linha TXT
+        function parseItemLine(line) {
+            const nameMatch = line.match(/"([^"]+)"/);
+            const name = nameMatch ? nameMatch[1] : '';
+
+            let beforeName = '';
+            let afterName = '';
+
+            if (nameMatch) {
+                beforeName = line.substring(0, nameMatch.index).trim();
+                afterName = line.substring(nameMatch.index + nameMatch[0].length).trim();
+            } else {
+                const parts = line.split(/\s{2,}/);
+                return parts.filter(p => p);
+            }
+
+            const beforeParts = beforeName.split(/\s+/).filter(p => p);
+            const afterParts = afterName.split(/\s{2,}/).filter(p => p);
+
+            return [...beforeParts, name, ...afterParts];
+        }
+
+        // Função para determinar LevelCH
+        function determineLevelCH(level) {
+            if (level >= 380) return 80;
+            if (level >= 300) return 75;
+            if (level >= 200) return 70;
+            if (level >= 150) return 50;
+            if (level >= 100) return 40;
+            if (level >= 70) return 30;
+            if (level >= 40) return 20;
+            if (level >= 20) return 10;
+            return 1;
+        }
+
+        // Função para escapar XML
+        function escapeXml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+    </script>
+</body>
+</html>
+
