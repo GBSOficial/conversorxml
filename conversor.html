@@ -325,29 +325,32 @@
         function convertTxtToXml(txtContent) {
             const lines = txtContent.split('\n').map(l => l.trim()).filter(l => l);
             
-            // Remove cabeçalho se houver
-            if (lines[0] && lines[0].startsWith('//')) {
-                lines.shift();
-            }
-
-            let sectionIndex = "0";
-            if (lines[0] && /^-?\d+$/.test(lines[0])) {
-                sectionIndex = lines[0];
-                lines.shift();
-            }
-
             let xml = '<?xml version="1.0"?>\n';
             xml += '<ItemList>\n';
-            xml += `\t<Section Index="${sectionIndex}">\n`;
 
-            let currentSection = sectionIndex;
+            let currentSection = null;
+            let sectionOpen = false;
 
             for (const line of lines) {
+                // Ignora linhas vazias, comentários e "end"
+                if (!line || line.startsWith('//') || line.toLowerCase() === 'end') {
+                    continue;
+                }
+
                 // Verifica se é mudança de seção
                 if (/^-?\d+$/.test(line)) {
-                    xml += `\t</Section>\n`;
+                    // Fecha seção anterior se estiver aberta
+                    if (sectionOpen) {
+                        xml += `\t</Section>\n`;
+                    }
                     currentSection = line;
                     xml += `\t<Section Index="${currentSection}">\n`;
+                    sectionOpen = true;
+                    continue;
+                }
+
+                // Se não há seção aberta ainda, ignora a linha
+                if (!sectionOpen) {
                     continue;
                 }
 
@@ -418,7 +421,11 @@
                 xml += `Model="${modelName}" />\n`;
             }
 
-            xml += `\t</Section>\n`;
+            // Fecha a última seção se estiver aberta
+            if (sectionOpen) {
+                xml += `\t</Section>\n`;
+            }
+            
             xml += `</ItemList>\n`;
 
             return xml;
@@ -433,7 +440,7 @@
                 throw new Error('XML inválido: ' + xmlDoc.documentElement.textContent);
             }
 
-            let txt = '//Type   Slot   Skill   Width   Height   HaveSerial   HaveOption   DropItem   Name                                 Level   DamageMin   DamageMax   AttackSpeed   Durability   MagicDurability   MagicDamageRate   ReqLevel   ReqStrength   ReqDexterity   ReqEnergy   ReqVitality   ReqLeadership   None   DW      DK      FE      MG      DL      SU      RF\n';
+            let txt = '';
 
             const sections = xmlDoc.querySelectorAll('Section');
             
@@ -444,6 +451,7 @@
             sections.forEach(section => {
                 const sectionIndex = section.getAttribute('Index') || '0';
                 txt += sectionIndex + '\n';
+                txt += '//Type   Slot   Skill   Width   Height   HaveSerial   HaveOption   DropItem   Name                                 Level   DamageMin   DamageMax   AttackSpeed   Durability   MagicDurability   MagicDamageRate   ReqLevel   ReqStrength   ReqDexterity   ReqEnergy   ReqVitality   ReqLeadership   None   DW      DK      FE      MG      DL      SU      RF\n';
 
                 const items = section.querySelectorAll('Item');
                 
@@ -525,10 +533,10 @@
                     
                     txt += parts.join('  ') + '\n';
                 });
+                
+                // Adiciona o "end" no final de cada seção
+                txt += 'end\n';
             });
-
-            // Adiciona o "end" no final do arquivo
-            txt += 'end';
 
             return txt;
         }
