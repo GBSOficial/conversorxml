@@ -437,76 +437,90 @@
 
             const sections = xmlDoc.querySelectorAll('Section');
             
+            if (sections.length === 0) {
+                throw new Error('Nenhuma seção encontrada no XML. Verifique se o arquivo está no formato correto.');
+            }
+            
             sections.forEach(section => {
                 const sectionIndex = section.getAttribute('Index') || '0';
                 txt += sectionIndex + '\n';
 
                 const items = section.querySelectorAll('Item');
+                
+                if (items.length === 0) {
+                    console.warn(`Nenhum item encontrado na seção ${sectionIndex}`);
+                }
+                
                 items.forEach(item => {
-                    const index = item.getAttribute('Index') || '0';
-                    const slot = item.getAttribute('Slot') || '0';
-                    const skill = item.getAttribute('SkillIndex') || '0';
-                    const width = item.getAttribute('Width') || '1';
-                    const height = item.getAttribute('Height') || '1';
-                    const haveSerial = item.getAttribute('HaveSerial') || item.getAttribute('SetAttrib') || '1';
-                    const haveOption = item.getAttribute('SetAttrib') || item.getAttribute('HaveOption') || '1';
-                    const dropItem = item.getAttribute('Drop') || '1';
-                    const name = item.getAttribute('Name') || '';
-                    const level = item.getAttribute('DropLevel') || '0';
-                    const damageMin = item.getAttribute('DamageMin') || '0';
-                    const damageMax = item.getAttribute('DamageMax') || '0';
-                    const attackSpeed = item.getAttribute('WeaponSpeed') || '0';
-                    const durability = item.getAttribute('Durability') || '0';
-                    const magicDurability = item.getAttribute('MagicDurability') || '0';
-                    const magicDamageRate = item.getAttribute('Magicpower') || '0';
-                    const reqLevel = item.getAttribute('ReqLevel') || '0';
-                    const reqStrength = item.getAttribute('ReqStrength') || '0';
-                    const reqDexterity = item.getAttribute('ReqDexterity') || '0';
-                    const reqEnergy = item.getAttribute('ReqEnergy') || '0';
-                    const reqVitality = item.getAttribute('ReqVitality') || '0';
-                    const reqLeadership = item.getAttribute('ReqCharisma') || '0';
+                    // Função auxiliar para obter atributo com fallback
+                    const getAttr = (attrName, defaultValue = '0') => {
+                        const value = item.getAttribute(attrName);
+                        return (value !== null && value !== '') ? value : defaultValue;
+                    };
+
+                    const index = getAttr('Index', '0');
+                    const slot = getAttr('Slot', '0');
+                    const skill = getAttr('SkillIndex', '0');
+                    const width = getAttr('Width', '1');
+                    const height = getAttr('Height', '1');
+                    const haveSerial = getAttr('SetAttrib', '1');
+                    const haveOption = getAttr('SetAttrib', '1');
+                    const dropItem = getAttr('Drop', '1');
+                    const name = getAttr('Name', '');
+                    const level = getAttr('DropLevel', '0');
+                    const damageMin = getAttr('DamageMin', '0');
+                    const damageMax = getAttr('DamageMax', '0');
+                    const attackSpeed = getAttr('WeaponSpeed', '0');
+                    const durability = getAttr('Durability', '0');
+                    const magicDurability = getAttr('MagicDurability', '0');
+                    const magicDamageRate = getAttr('Magicpower', '0');
+                    const reqLevel = getAttr('ReqLevel', '0');
+                    const reqStrength = getAttr('ReqStrength', '0');
+                    const reqDexterity = getAttr('ReqDexterity', '0');
+                    const reqEnergy = getAttr('ReqEnergy', '0');
+                    const reqVitality = getAttr('ReqVitality', '0');
+                    const reqLeadership = getAttr('ReqCharisma', '0');
                     const none = '0';
-                    const dw = item.getAttribute('DarkWizard') || '0';
-                    const dk = item.getAttribute('DarkKnight') || '0';
-                    const fe = item.getAttribute('FairyElf') || '0';
-                    const mg = item.getAttribute('MagicGladiator') || '0';
-                    const dl = item.getAttribute('DarkLord') || '0';
-                    const su = item.getAttribute('Summoner') || '0';
-                    const rf = item.getAttribute('RageFighter') || '0';
+                    const dw = getAttr('DarkWizard', '0');
+                    const dk = getAttr('DarkKnight', '0');
+                    const fe = getAttr('FairyElf', '0');
+                    const mg = getAttr('MagicGladiator', '0');
+                    const dl = getAttr('DarkLord', '0');
+                    const su = getAttr('Summoner', '0');
+                    const rf = getAttr('RageFighter', '0');
 
                     // Formata a linha com espaçamento similar ao original
-                    // Espaçamento baseado no arquivo original
                     const parts = [
-                        index.padStart(8),
-                        slot.padStart(7),
-                        skill.padStart(7),
-                        width.padStart(7),
-                        height.padStart(7),
-                        haveSerial.padStart(13),
-                        haveOption.padStart(13),
-                        dropItem.padStart(13),
-                        `"${name}"`.padEnd(35),
-                        level.padStart(7),
-                        damageMin.padStart(13),
-                        damageMax.padStart(13),
-                        attackSpeed.padStart(13),
-                        durability.padStart(13),
-                        magicDurability.padStart(18),
-                        magicDamageRate.padStart(18),
-                        reqLevel.padStart(11),
-                        reqStrength.padStart(13),
-                        reqDexterity.padStart(14),
-                        reqEnergy.padStart(14),
-                        reqVitality.padStart(14),
-                        reqLeadership.padStart(17),
-                        none.padStart(7),
-                        dw.padStart(7),
-                        dk.padStart(7),
-                        fe.padStart(7),
-                        mg.padStart(7),
-                        dl.padStart(7),
-                        su.padStart(7),
-                        rf
+                        index.toString().padStart(8, ' '),
+                        slot.toString().padStart(7, ' '),
+                        skill.toString().padStart(7, ' '),
+                        width.toString().padStart(7, ' '),
+                        height.toString().padStart(7, ' '),
+                        haveSerial.toString().padStart(13, ' '),
+                        haveOption.toString().padStart(13, ' '),
+                        dropItem.toString().padStart(13, ' '),
+                        `"${name}"`.padEnd(37, ' '),
+                        level.toString().padStart(7, ' '),
+                        damageMin.toString().padStart(13, ' '),
+                        damageMax.toString().padStart(13, ' '),
+                        attackSpeed.toString().padStart(13, ' '),
+                        durability.toString().padStart(13, ' '),
+                        magicDurability.toString().padStart(18, ' '),
+                        magicDamageRate.toString().padStart(18, ' '),
+                        reqLevel.toString().padStart(11, ' '),
+                        reqStrength.toString().padStart(13, ' '),
+                        reqDexterity.toString().padStart(14, ' '),
+                        reqEnergy.toString().padStart(14, ' '),
+                        reqVitality.toString().padStart(14, ' '),
+                        reqLeadership.toString().padStart(17, ' '),
+                        none.toString().padStart(7, ' '),
+                        dw.toString().padStart(7, ' '),
+                        dk.toString().padStart(7, ' '),
+                        fe.toString().padStart(7, ' '),
+                        mg.toString().padStart(7, ' '),
+                        dl.toString().padStart(7, ' '),
+                        su.toString().padStart(7, ' '),
+                        rf.toString()
                     ];
                     
                     txt += parts.join('  ') + '\n';
